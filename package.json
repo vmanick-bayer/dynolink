@@ -1,0 +1,40 @@
+{
+  "name": "dynolink",
+  "version": "1.0.0",
+  "description": "A TypeScript ORM for DynamoDB",
+  "main": "dist/index.js",
+  "types": "dist/types/index.d.ts",
+  "files": [
+    "dist/**/*",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "test:watch": "jest --watch --config jest.unit.config.js",
+    "test:coverage": "jest --coverage --config jest.unit.config.js",
+    "test:integration": "jest --config jest.integration.config.js"
+  },
+  "keywords": [
+    "DynamoDB",
+    "Typed",
+    "ORM"
+  ],
+  "author": "Vinoth Manickam Ettiappan",
+  "license": "MIT",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.808.0",
+    "@aws-sdk/util-dynamodb": "^3.808.0",
+    "reflect-metadata": "^0.2.2",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@types/uuid": "^10.0.0",
+    "aws-sdk-client-mock": "^4.1.0",
+    "aws-sdk-client-mock-jest": "^4.1.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.3.2",
+    "ts-node": "^10.9.2"
+  }
+}
