@@ -1,8 +1,7 @@
 // infra/ensure-table.ts
 
-import { ListTablesCommand, CreateTableCommand } from '@aws-sdk/client-dynamodb';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { generateUnifiedCreateTableInput} from './table-definitions';
+import {CreateTableCommand, DynamoDBClient, ListTablesCommand, UpdateTimeToLiveCommand} from '@aws-sdk/client-dynamodb';
+import {generateUnifiedCreateTableInput} from './table-definitions';
 import {getEntityMetadata} from "../core/decorators";
 
 /**
@@ -17,30 +16,30 @@ export async function ensureTable<T>(entity: new () => T, client: DynamoDBClient
 
     const existing = await client.send(new ListTablesCommand({}));
 
-    if (existing.TableNames?.includes(meta.tableName)) {
-        console.log(`✅ Table "${meta.tableName}" already exists`);
+    if (existing.TableNames?.includes(tableName)) {
+        console.log(`✅ Table "${tableName}" already exists`);
     } else {
         const input = generateUnifiedCreateTableInput([entity]);
         await client.send(new CreateTableCommand(input));
-        console.log(`✅ Created table "${meta.tableName}"`);
+        console.log(`✅ Created table "${tableName}"`);
     }
 
     // Enable TTL if `ttl` field is defined
-    const hasTTL = [...meta.attributes.entries()].find(
+    const hasTTL = [...metadata.attributes.entries()].find(
         ([name]) => name === 'ttl'
     );
 
     if (hasTTL) {
         await client.send(
             new UpdateTimeToLiveCommand({
-                TableName: meta.tableName,
+                TableName: tableName,
                 TimeToLiveSpecification: {
                     AttributeName: 'ttl',
                     Enabled: true,
                 },
             })
         );
-        console.log(`✅ TTL enabled on "${meta.tableName}" using 'ttl' attribute`);
+        console.log(`✅ TTL enabled on "${tableName}" using 'ttl' attribute`);
     }
     console.log(`✅ Created table "${tableName}"`);
 }

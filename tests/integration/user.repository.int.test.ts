@@ -1,4 +1,4 @@
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import {DynamoDBClient} from '@aws-sdk/client-dynamodb';
 import {UserRepository} from "../../src/examples/repositories/user.repository";
 import {User} from "../../src/examples/models/user.entity";
 import {ensureTable} from "../../src/infra/ensure-table";
@@ -52,10 +52,33 @@ describe('UserRepository Integration', () => {
         user.id = "123"
 
         await repo.save(user);
-        await repo.delete({ id: user.id });
+        await repo.delete({id: user.id, name: 'Delete Me'});
 
-        const deleted = await repo.findOne({ id: user.id });
+        const deleted = await repo.findOne({id: user.id, name: 'Delete Me'});
         expect(deleted).toBeNull();
+    });
+
+    it('should do batch write and retrieve users', async () => {
+        const user = new User();
+        user.name = 'User 101';
+        user.email = 'user101@test.com';
+        user.id = "101";
+        user.status = 'Being processed'
+
+        const user1 = new User();
+        user1.name = 'User 102';
+        user1.email = 'user102@test.com';
+        user1.id = "102";
+        user1.status = 'Open'
+
+        const user2 = new User();
+        user2.name = 'User 103';
+        user2.email = 'user103@test.com';
+        user2.id = "103"
+        user2.status = 'Complete'
+        await repo.batchWrite([user, user1, user2]);
+        const resultSet = await repo.batchGet([user, user1, user2]);
+        expect(resultSet.length).toBe(3);
     });
 
 });

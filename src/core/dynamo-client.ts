@@ -1,5 +1,6 @@
-import { DynamoDB } from 'aws-sdk';
+import {DynamoDBClient} from '@aws-sdk/client-dynamodb';
 
-export const dynamoClient = new DynamoDB.DocumentClient({
-    region: 'us-east-1',
+export const dynamoClient = new DynamoDBClient({
+    // Use your AWS credentials and region
+    // region: 'us-east-1',
 });

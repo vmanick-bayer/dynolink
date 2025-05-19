@@ -1,15 +1,17 @@
 import {
+    BatchGetItemCommand,
+    BatchWriteItemCommand,
+    DeleteItemCommand,
     DynamoDBClient,
     GetItemCommand,
-    DeleteItemCommand,
     PutItemCommand,
-    UpdateItemCommand,
     QueryCommand,
+    UpdateItemCommand
 } from '@aws-sdk/client-dynamodb';
-import { marshall, unmarshall } from '@aws-sdk/util-dynamodb';
-import { getEntityMetadata } from './decorators';
-import { QueryBuilder, QueryFilter } from './query-builder';
-import { v4 as uuidv4 } from 'uuid';
+import {marshall, unmarshall} from '@aws-sdk/util-dynamodb';
+import {getEntityMetadata} from './decorators';
+import {QueryBuilder, QueryFilter} from './query-builder';
+import {v4 as uuidv4} from 'uuid';
 
 /**
  * BaseRepository class for managing DynamoDB entities.
@@ -130,6 +132,55 @@ export abstract class BaseRepository<T> {
         if (!res.Item) return null;
         const entity = unmarshall(res.Item) as T;
         return this.transform(entity, 'fromDb');
+    }
+
+
+    /**
+     * Batch retrieves entities from DynamoDB.
+     * @param keys
+     */
+    async batchGet(keys: Partial<T>[]): Promise<T[]> {
+        const requestKeys = keys.map((key) => marshall(this.getKey(key)));
+
+        const command = new BatchGetItemCommand({
+            RequestItems: {
+                [this.tableName]: {
+                    Keys: requestKeys,
+                },
+            },
+        });
+
+        const result = await this.client.send(command);
+        const items = result.Responses?.[this.tableName] ?? [];
+        return items.map((item) => this.transform(unmarshall(item) as T, 'fromDb'));
+    }
+
+
+    /**
+     * Batch writes entities to DynamoDB.
+     * @param entities
+     * @param action
+     */
+    async batchWrite(entities: T[], action: 'put' | 'delete' = 'put'): Promise<void> {
+        const requestItems = entities.map((entity) => {
+            if (action === 'put') {
+                const transformed = marshall(this.transform(entity, 'toDb'), {
+                    removeUndefinedValues: true,
+                    convertClassInstanceToMap: true,
+                });
+                return {PutRequest: {Item: transformed}};
+            } else {
+                return {DeleteRequest: {Key: marshall(this.getKey(entity))}};
+            }
+        });
+
+        await this.client.send(
+            new BatchWriteItemCommand({
+                RequestItems: {
+                    [this.tableName]: requestItems,
+                },
+            })
+        );
     }
 
     /**
